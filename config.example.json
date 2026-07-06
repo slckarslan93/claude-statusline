@@ -16,10 +16,18 @@
     "pr",
     "agent"
   ],
-  "separator": "  ",
-  "divider": "·",
+  "separator": " ",
+  "divider": "│",
   "colors": true,
-  "icons": true,
+  "truecolor": true,
+  "icons": false,
+  "gradient": {
+    "enabled": false,
+    "appliesTo": "model",
+    "periodMs": 5000,
+    "spread": 0.55,
+    "stops": ["#F6C46F", "#F38868", "#E56C8A", "#D879BB"]
+  },
   "wrap": { "enabled": true, "maxWidth": 0, "fallbackWidth": 100 },
 
   "context": {

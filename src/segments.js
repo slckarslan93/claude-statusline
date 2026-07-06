@@ -5,8 +5,8 @@ const path = require('path');
 const fs = require('fs');
 const os = require('os');
 
-// Emoji shown when cfg.icons is true. With icons off, segments fall back to
-// short text labels so the line still reads on a plain terminal.
+// Optional emoji, only used when cfg.icons is true. The default theme is
+// emoji-free and uses dim text labels instead (see below).
 const ICONS = {
   dir: '📁',
   git: '⎇',
@@ -37,40 +37,41 @@ function prettyModel(model) {
   return disp || id || '';
 }
 
-const EFFORT_COLOR = {
-  max: 'magenta',
-  xhigh: 'red',
-  high: 'yellow',
-  medium: 'cyan',
-  low: 'gray',
-};
-
-function bar(pct, width, c) {
+function bar(pct, width) {
   const p = Math.max(0, Math.min(100, pct));
   const filled = Math.round((p / 100) * width);
   return '▓'.repeat(filled) + '░'.repeat(Math.max(0, width - filled));
 }
 
+// Prefix an icon (icons mode) or nothing. The default theme relies on labels,
+// not icons, so this is empty unless the user opts back into icons.
+function ico(name, cfg) {
+  return cfg.icons && ICONS[name] ? ICONS[name] + ' ' : '';
+}
+
 // Each segment is (data, cfg, c) => string. Returning '' omits the segment.
-// `c` bundles the render helpers built in index.js.
+// Colour discipline (Slate Teal): identity is accent teal; values are neutral
+// text; labels/units/prefixes are dim; hue (good/warn/crit) appears only on
+// threshold metrics — context, cache, rate — plus the conventional +/- on
+// lines and PR review state.
 const SEGMENTS = {
-  // Project / working directory basename.
+  // Project / working directory basename — the identity anchor, in accent.
   dir(d, cfg, c) {
     const ws = d.workspace || {};
     const dir = (cfg.dir.useProjectDir && ws.project_dir) || ws.current_dir || d.cwd;
     if (!dir) return '';
     const name = path.basename(dir.replace(/[\\/]+$/, ''));
     if (!name) return '';
-    return c.icon('dir') + c.paint('white', name);
+    const g = c.gradient(name, 'dir');
+    return ico('dir', cfg) + (g || c.paint('accent', name));
   },
 
-  // Current git branch (spawns git) plus optional repo name from the payload.
+  // Current git branch (accent) plus optional repo name (dim).
   git(d, cfg, c) {
     if (!cfg.git.enabled) return '';
     const ws = d.workspace || {};
     const cwd = ws.current_dir || d.cwd;
     let branch = '';
-    // Worktree sessions expose the branch directly — no spawn needed.
     if (d.worktree && d.worktree.branch) branch = d.worktree.branch;
     else if (ws.git_worktree) branch = ws.git_worktree;
     if (!branch && cwd) {
@@ -86,41 +87,41 @@ const SEGMENTS = {
       }
     }
     if (!branch) return '';
-    let out = c.icon('git') + c.paint('purple', branch);
+    let out = ico('git', cfg) + c.paint('accent', branch);
     if (cfg.git.showRepo && ws.repo && ws.repo.name) {
-      out += c.paint('grayDim', ` (${ws.repo.name})`);
+      out += c.label(` (${ws.repo.name})`);
     }
     return out;
   },
 
-  // Active model, prettified.
+  // Active model, prettified. Carries the optional shimmer gradient.
   model(d, cfg, c) {
     const name = prettyModel(d.model);
     if (!name) return '';
-    return c.icon('model') + c.paint('blue', name);
-  },
-
-  // Reasoning effort (low/medium/high/xhigh/max). Absent for models without it.
-  effort(d, cfg, c) {
-    const level = d.effort && d.effort.level;
-    if (!level) return '';
-    const color = EFFORT_COLOR[level] || 'white';
-    return c.icon('effort') + c.paint(color, level);
+    const g = c.gradient(name, 'model');
+    return ico('model', cfg) + (g || c.paint('text', name));
   },
 
   // Opus fast-mode indicator (/fast); only shown when active.
   fast(d, cfg, c) {
     if (!d.fast_mode) return '';
-    return c.icon('fast') + c.paint('orange', 'FAST');
+    return ico('fast', cfg) + c.paint('accent', 'fast');
   },
 
-  // Extended-thinking indicator; only shown when enabled.
+  // Reasoning effort (low…max). Neutral by design — no per-level rainbow.
+  effort(d, cfg, c) {
+    const level = d.effort && d.effort.level;
+    if (!level) return '';
+    return ico('effort', cfg) + c.paint('text', level);
+  },
+
+  // Extended-thinking indicator; dim, only when enabled.
   thinking(d, cfg, c) {
     if (!d.thinking || !d.thinking.enabled) return '';
-    return c.cfg.icons ? c.icon('think').trim() : c.paint('cyan', 'think');
+    return c.label('think');
   },
 
-  // Context-window fill: bar + percent + token count + window size.
+  // Context-window fill: dim label + bar/percent (threshold hue) + dim tokens.
   context(d, cfg, c) {
     const cw = d.context_window;
     if (!cw) return '';
@@ -128,21 +129,21 @@ const SEGMENTS = {
     if (usedPct === null || usedPct === undefined) return '';
     usedPct = Number(usedPct);
     const color = c.usageColor(usedPct, cfg.context.warnAt, cfg.context.critAt);
-    let out = '';
-    if (cfg.context.bar) out += c.paint(color, `[${bar(usedPct, cfg.context.barWidth)}]`) + ' ';
+    let out = c.label('ctx ');
+    if (cfg.context.bar) out += c.paint(color, bar(usedPct, cfg.context.barWidth)) + ' ';
     out += c.paint(color, c.fmt.pct(usedPct));
     if (cfg.context.showTokens && cw.total_input_tokens !== undefined) {
       let tok = c.fmt.tokens(cw.total_input_tokens);
       if (cfg.context.showSize && cw.context_window_size) {
         tok += '/' + c.fmt.windowSize(cw.context_window_size);
       }
-      out += ' ' + c.paint('grayDim', tok);
+      out += ' ' + c.label(tok);
     }
-    if (d.exceeds_200k_tokens) out += ' ' + c.paint('red', c.icon('warn') + '200k');
+    if (d.exceeds_200k_tokens) out += ' ' + c.paint('crit', '200k!');
     return out;
   },
 
-  // Prompt-cache hit rate from current_usage (higher is better).
+  // Prompt-cache hit rate (threshold hue, higher is better).
   cache(d, cfg, c) {
     const u = d.context_window && d.context_window.current_usage;
     if (!u) return '';
@@ -153,92 +154,88 @@ const SEGMENTS = {
     if (denom <= 0) return '';
     const hit = (read / denom) * 100;
     const color = c.qualityColor(hit, cfg.cache.warnAt, cfg.cache.critAt);
-    return c.icon('cache') + c.paint(color, 'cache ' + c.fmt.pct(hit));
+    return c.label('cache ') + c.paint(color, c.fmt.pct(hit));
   },
 
-  // Session cost in USD (client-side estimate from Claude Code).
+  // Session cost in USD — neutral value, the $ self-labels.
   cost(d, cfg, c) {
     const cost = d.cost && d.cost.total_cost_usd;
     if (cost === null || cost === undefined) return '';
     const s = c.fmt.money(cost, cfg.cost.decimals);
     if (!s) return '';
-    return c.icon('cost') + c.paint('yellow', s);
+    return ico('cost', cfg) + c.paint('text', s);
   },
 
-  // Lines added/removed this session.
+  // Lines added/removed — conventional muted green/red, self-marked by +/-.
   lines(d, cfg, c) {
     const cost = d.cost || {};
     const add = cost.total_lines_added;
     const rem = cost.total_lines_removed;
     if (!add && !rem) return '';
-    const a = c.paint('green', `+${add || 0}`);
-    const r = c.paint('red', `-${rem || 0}`);
-    return a + c.paint('grayDim', '/') + r;
+    return c.paint('good', `+${add || 0}`) + c.label('/') + c.paint('crit', `-${rem || 0}`);
   },
 
-  // Wall-clock session duration (and optional API-only time).
+  // Wall-clock session duration (dim, secondary). Optional API-only time.
   duration(d, cfg, c) {
     const cost = d.cost || {};
     if (cost.total_duration_ms === undefined || cost.total_duration_ms === null) return '';
-    let out = c.icon('duration') + c.paint('gray', c.fmt.duration(cost.total_duration_ms));
+    let out = ico('duration', cfg) + c.paint('text', c.fmt.duration(cost.total_duration_ms));
     if (cfg.duration.showApi && cost.total_api_duration_ms !== undefined) {
-      out += c.paint('grayDim', ` (api ${c.fmt.duration(cost.total_api_duration_ms)})`);
+      out += c.label(` (api ${c.fmt.duration(cost.total_api_duration_ms)})`);
     }
     return out;
   },
 
-  // 5-hour rolling rate-limit usage + reset countdown (Pro/Max only).
+  // 5-hour / 7-day rate-limit usage + reset countdown (Pro/Max only).
   rate5h(d, cfg, c) {
     return renderRate(d, cfg, c, 'five_hour', '5h');
   },
-
-  // 7-day rate-limit usage + reset countdown (Pro/Max only).
   rate7d(d, cfg, c) {
     return renderRate(d, cfg, c, 'seven_day', '7d');
   },
 
-  // Open PR for the current branch, with review state when available.
+  // Open PR for the current branch — dim PR# prefix, review state keeps hue.
   pr(d, cfg, c) {
     if (!d.pr || !d.pr.number) return '';
-    let out = c.icon('pr') + c.paint('blue', `PR#${d.pr.number}`);
+    let out = c.label('PR#') + c.paint('text', String(d.pr.number));
     if (d.pr.review_state) {
       const st = d.pr.review_state;
-      const col = st === 'approved' ? 'green' : st === 'changes_requested' ? 'red' : 'yellow';
+      const col = st === 'approved' ? 'good' : st === 'changes_requested' ? 'crit' : 'warn';
       out += ' ' + c.paint(col, st);
     }
     return out;
   },
 
-  // Active subagent name (when running under an agent).
+  // Active subagent name — dim @ prefix, neutral name.
   agent(d, cfg, c) {
     if (!d.agent || !d.agent.name) return '';
-    return c.icon('agent') + c.paint('magenta', d.agent.name);
+    return c.label('@') + c.paint('text', d.agent.name);
   },
 
   // Output style, shown only when not the default.
   outputStyle(d, cfg, c) {
     const name = d.output_style && d.output_style.name;
     if (!name || name === 'default') return '';
-    return c.paint('cyan', name);
+    return c.paint('accent', name);
   },
 
   // Custom session name (from --name / /rename).
   session(d, cfg, c) {
     if (!d.session_name) return '';
-    return c.paint('white', d.session_name);
+    return c.paint('text', d.session_name);
   },
 
   // Vim mode indicator.
   vim(d, cfg, c) {
     const mode = d.vim && d.vim.mode;
     if (!mode) return '';
-    return c.paint('grayDim', mode);
+    return c.label(mode);
   },
 
   // Claude Code version.
   version(d, cfg, c) {
     if (!d.version) return '';
-    return c.paint('grayDim', 'v' + d.version);
+    return c.label('v' + d.version);
   },
 
   // Optional caveman-plugin badge (off by default; keeps this project neutral).
@@ -266,10 +263,10 @@ function renderRate(d, cfg, c, key, label) {
   if (!rl || rl.used_percentage === undefined || rl.used_percentage === null) return '';
   const p = Number(rl.used_percentage);
   const color = c.usageColor(p, cfg.rate.warnAt, cfg.rate.critAt);
-  let out = c.paint('grayDim', label + ':') + c.paint(color, c.fmt.pct(p));
+  let out = c.label(label + ' ') + c.paint(color, c.fmt.pct(p));
   if (cfg.rate.countdown && rl.resets_at) {
     const left = c.fmt.countdown(rl.resets_at);
-    if (left) out += c.paint('grayDim', ` ${left}`);
+    if (left) out += c.label(` ${left}`);
   }
   return out;
 }

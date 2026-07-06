@@ -25,10 +25,21 @@ const DEFAULTS = {
     'pr',
     'agent',
   ],
-  separator: '  ',        // rendered between segments (a dim divider is added)
-  divider: '·',           // the character drawn (dimmed) between segments
+  separator: ' ',         // spacing around the dim divider
+  divider: '│',           // thin divider drawn (dimmed) between segments
   colors: true,           // false (or NO_COLOR env) => plain text
-  icons: true,            // false => text labels instead of emoji/glyphs
+  truecolor: true,        // 24-bit colour; false => 256-index fallback
+  icons: false,           // true => emoji glyphs instead of the text theme
+
+  // Optional per-render shimmer gradient (default off). Truecolor only; it
+  // degrades to a flat colour otherwise. appliesTo: 'model' | 'dir'.
+  gradient: {
+    enabled: false,
+    appliesTo: 'model',
+    periodMs: 5000,
+    spread: 0.55,
+    stops: ['#F6C46F', '#F38868', '#E56C8A', '#D879BB'],
+  },
 
   // Word-wrap each logical line to the terminal width so nothing is clipped.
   // maxWidth 0 => auto-detect (stdout/COLUMNS/stderr); set a number to force it.

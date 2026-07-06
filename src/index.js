@@ -9,15 +9,28 @@ const { SEGMENTS, ICONS } = require('./segments');
 // state and icon mode are resolved once here so segments stay declarative.
 function makeHelpers(cfg) {
   const enabled = colors.colorEnabled(cfg);
+  const truecolor = colors.truecolorEnabled(cfg);
   return {
     cfg,
     fmt,
     enabled,
-    paint: (name, str) => colors.paint(name, str, enabled),
+    truecolor,
+    paint: (name, str) => colors.paint(name, str, enabled, truecolor),
+    label: (str) => colors.paint('dim', str, enabled, truecolor),
     bold: (str) => colors.bold(str, enabled),
     icon: (name) => (cfg.icons && ICONS[name] ? ICONS[name] + ' ' : ''),
     usageColor: colors.usageColor,
     qualityColor: colors.qualityColor,
+    // Per-render gradient for a given target (e.g. 'model'); null when the
+    // gradient is off/unavailable so the segment falls back to a flat colour.
+    gradient: (str, target) => {
+      const g = cfg.gradient;
+      if (!g || !g.enabled || !enabled) return null;
+      if (target && g.appliesTo && g.appliesTo !== target) return null;
+      const stops = (g.stops || []).map(colors.hexToRgb);
+      const phase = ((Date.now() / (g.periodMs || 5000)) % 1 + 1) % 1;
+      return colors.gradientText(str, stops, { enabled: true, truecolor, phase, spread: g.spread });
+    },
   };
 }
 
