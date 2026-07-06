@@ -170,6 +170,12 @@ const SEGMENTS = {
       const s = c.fmt.money(total, dec);
       if (s) out.push(ico('cost', cfg) + c.paint('text', s));
     }
+    if (cc.showMessage === true) {
+      const msg = costSinceMessage(Number(total));
+      if (msg !== null) {
+        out.push(c.label(`(${cc.messageLabel || 'msg'} `) + c.paint('accent', c.fmt.money(msg, dec)) + c.label(')'));
+      }
+    }
     if (cc.showTask === true) {
       const task = costSinceBaseline(d.session_id, Number(total));
       if (task !== null) {
@@ -294,6 +300,37 @@ function costSinceBaseline(sessionId, total) {
         fs.mkdirSync(path.dirname(file), { recursive: true });
         fs.writeFileSync(file, JSON.stringify({ baseline: base, session_id: skey }));
       } catch (_) {}
+    }
+    return Math.max(0, total - base);
+  } catch (_) {
+    return null;
+  }
+}
+
+// Cost accrued since the current user message started. A UserPromptSubmit hook
+// drops a `.cost-msg-reset` flag; the next render rebaselines to the current
+// total (message cost -> 0) and clears the flag. Without the hook this behaves
+// like a session-start baseline. Returns null on failure.
+function costSinceMessage(total) {
+  if (total === null || total === undefined || isNaN(total)) return null;
+  try {
+    const dir = path.join(process.env.CLAUDE_CONFIG_DIR || path.join(os.homedir(), '.claude'), 'claude-statusline');
+    const baseFile = path.join(dir, '.cost-msg-baseline');
+    const flagFile = path.join(dir, '.cost-msg-reset');
+    let base = null;
+    try {
+      base = JSON.parse(fs.readFileSync(baseFile, 'utf8')).baseline;
+      if (typeof base !== 'number') base = null;
+    } catch (_) {}
+    let reset = false;
+    try { reset = fs.existsSync(flagFile); } catch (_) {}
+    if (reset || base === null || base > total) {
+      base = total;
+      try {
+        fs.mkdirSync(dir, { recursive: true });
+        fs.writeFileSync(baseFile, JSON.stringify({ baseline: base }));
+      } catch (_) {}
+      if (reset) { try { fs.unlinkSync(flagFile); } catch (_) {} }
     }
     return Math.max(0, total - base);
   } catch (_) {

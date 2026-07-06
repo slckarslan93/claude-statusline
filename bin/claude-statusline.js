@@ -20,6 +20,21 @@ if (process.argv.includes('--reset-cost')) {
   process.exit(0);
 }
 
+// `--mark-message`: drop a flag so the next render rebaselines the per-message
+// cost to the current total (message cost -> 0). Wire this to a UserPromptSubmit
+// hook so "message" cost resets at the start of every user message.
+if (process.argv.includes('--mark-message')) {
+  try {
+    const os = require('os');
+    const path = require('path');
+    const fs = require('fs');
+    const dir = path.join(process.env.CLAUDE_CONFIG_DIR || path.join(os.homedir(), '.claude'), 'claude-statusline');
+    fs.mkdirSync(dir, { recursive: true });
+    fs.writeFileSync(path.join(dir, '.cost-msg-reset'), '');
+  } catch (_) {}
+  process.exit(0);
+}
+
 function emit(raw) {
   let data = {};
   try {

@@ -56,9 +56,20 @@ const DEFAULTS = {
   },
   cache: { warnAt: 40, critAt: 70 },      // hit-rate thresholds (higher is better)
   rate: { warnAt: 50, critAt: 80, countdown: true },
-  // showTask adds a per-task figure measured from a baseline (reset on a new
-  // session or via `--reset-cost`), e.g. "$525.04 (task $2.10)".
-  cost: { decimals: 2, showSession: true, showTask: false, taskLabel: 'task' },
+  // Cost has three levels, each optional:
+  //  - showSession: this session's running total (from Claude Code)
+  //  - showMessage: cost of the current message (resets each user prompt via a
+  //    UserPromptSubmit hook running `--mark-message`)
+  //  - showTask: cost since a manual baseline (reset with `--reset-cost`)
+  // e.g. "$525.04 (msg $0.02) (task $2.10)".
+  cost: {
+    decimals: 2,
+    showSession: true,
+    showMessage: false,
+    showTask: false,
+    messageLabel: 'msg',
+    taskLabel: 'task',
+  },
   duration: { showApi: false },           // also show API-only time
   git: { enabled: true, timeoutMs: 250, showRepo: true },
   dir: { useProjectDir: false },          // false => current dir basename; true => project (launch) dir

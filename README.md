@@ -109,7 +109,9 @@ The `segments` array is the heart of it — it controls **what shows and in what
 | `rate.countdown` | `true` | Show time until each window resets |
 | `cost.decimals` | `2` | Decimal places for the USD figure |
 | `cost.showSession` | `true` | Show the running session total |
+| `cost.showMessage` | `false` | Also show a per-message figure (needs the `--mark-message` hook) |
 | `cost.showTask` | `false` | Also show a per-task figure from a resettable baseline |
+| `cost.messageLabel` | `"msg"` | Label for the per-message figure, e.g. `(msg $0.02)` |
 | `cost.taskLabel` | `"task"` | Label for the per-task figure, e.g. `(task $2.10)` |
 | `duration.showApi` | `false` | Also show API-only time |
 | `git.enabled` | `true` | Run `git` to read the branch |
@@ -236,26 +238,48 @@ stripped when measuring, so wrapping still lines up.
 
 Several fields only appear in some sessions — `rate_limits` needs a Pro/Max subscription and a first API response, `effort` only on models that support it, `pr` only when a PR is open, `agent` only under `--agent`, and `current_usage` is `null` right after `/compact`. Every segment handles absence by rendering nothing.
 
-### Per-task cost
+### Cost: session, message, task
 
-`cost.total_cost_usd` is the running total for the **whole session**, so on a
-long-lived session it keeps climbing across many tasks. Enable `cost.showTask`
-to also show a per-task figure measured from a baseline:
+The `cost` segment can show up to three figures side by side, e.g.
+`$525.04 (msg $0.02) (conv $2.10)`:
+
+| Level | Enable | Resets |
+|-------|--------|--------|
+| **Session** total | `showSession` (default on) | Never — Claude Code's running total for the whole session |
+| **Message** cost | `showMessage` | At the start of every user message (needs the hook below) |
+| **Task** cost | `showTask` | Manually with `--reset-cost` — use it to mark a new task/conversation |
+
+`messageLabel` / `taskLabel` set the labels (defaults `msg` / `task`).
+
+All three are the same client-side estimate — the equivalent API cost — and each
+covers **everything the session bills**: your input, the model's output, tool
+calls, and any sub-agents or workflows spawned along the way (not just your
+messages).
+
+**Per-message cost needs a hook.** Claude Code doesn't hand the status line a
+per-message marker, so message cost is reset by a `UserPromptSubmit` hook that
+runs `--mark-message` at the start of each message. Add it to
+`~/.claude/settings.json` (merge with any existing hooks):
 
 ```json
-{ "cost": { "showSession": true, "showTask": true, "taskLabel": "task" } }
+{
+  "hooks": {
+    "UserPromptSubmit": [
+      { "hooks": [ { "type": "command",
+        "command": "node \"/abs/path/claude-statusline/bin/claude-statusline.js\" --mark-message" } ] }
+    ]
+  }
+}
 ```
 
-renders `$525.04 (task $2.10)`. The baseline resets automatically when the
-session changes, and on demand when you start a new task:
+Without the hook, `showMessage` just behaves like a session-start baseline.
+
+**Task cost** is a manual per-task / per-conversation figure — run it when you
+start something new and it counts from `$0.00`:
 
 ```bash
 node bin/claude-statusline.js --reset-cost   # or: npm run reset-cost
 ```
-
-The next render rebaselines to the current total, so `task` starts again at
-`$0.00`. Both figures are the same client-side estimate as the session total —
-the equivalent API cost, not a subscription charge.
 
 ## Notes on the numbers
 
