@@ -38,7 +38,7 @@ Varsayılan **Slate Teal** teması bilinçli olarak sakindir: projeniz ve branch
 git clone https://github.com/slckarslan93/claude-statusline.git && cd claude-statusline && node install.js
 ```
 
-Sonra **Claude Code'u yeniden başlat** (veya `/statusline` çalıştır) → durum satırı altta belirir. Hepsi bu.
+Sonra **Claude Code'u yeniden başlat** → durum satırı altta belirir. Hepsi bu.
 
 > Zaten Claude Code içinde misin? Aynı satırı başına `!` koyarak burada çalıştır: `! git clone …/claude-statusline.git && cd claude-statusline && node install.js`
 

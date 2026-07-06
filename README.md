@@ -47,8 +47,7 @@ rate limits turning amber or red). No emoji, no rainbow. An optional truecolor
 git clone https://github.com/slckarslan93/claude-statusline.git && cd claude-statusline && node install.js
 ```
 
-Then **restart Claude Code** (or run `/statusline`) and the status line appears at
-the bottom. That's it.
+Then **restart Claude Code** and the status line appears at the bottom. That's it.
 
 > Already inside Claude Code? Paste the same line with a leading `!` to run it
 > right here: `! git clone …/claude-statusline.git && cd claude-statusline && node install.js`
