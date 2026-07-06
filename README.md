@@ -329,6 +329,18 @@ Or with your own mock:
 echo '{"model":{"id":"claude-sonnet-4-6"},"context_window":{"used_percentage":25,"total_input_tokens":50000,"context_window_size":200000}}' | node bin/claude-statusline.js
 ```
 
+## Updating
+
+Installed via git? Pull the latest — the status line runs straight from your
+clone, so new code takes effect on the next render (no re-install needed):
+
+```bash
+cd claude-statusline && git pull
+```
+
+To hear about new versions, **Watch** the repo on GitHub (Watch → Custom →
+Releases). See [CHANGELOG.md](./CHANGELOG.md) for what changed.
+
 ## Uninstall
 
 ```bash

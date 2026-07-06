@@ -289,6 +289,18 @@ Veya kendi mock'unla:
 echo '{"model":{"id":"claude-sonnet-4-6"},"context_window":{"used_percentage":25,"total_input_tokens":50000,"context_window_size":200000}}' | node bin/claude-statusline.js
 ```
 
+## Güncelleme
+
+Git ile mi kurdun? Son sürümü çek — durum satırı doğrudan senin klonundan
+çalışır, yeni kod bir sonraki render'da devreye girer (re-install gerekmez):
+
+```bash
+cd claude-statusline && git pull
+```
+
+Yeni sürümlerden haberdar olmak için repo'yu GitHub'da **Watch** et (Watch →
+Custom → Releases). Neyin değiştiği için [CHANGELOG.md](./CHANGELOG.md).
+
 ## Kaldırma (Uninstall)
 
 ```bash
