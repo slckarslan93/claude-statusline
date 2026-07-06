@@ -28,6 +28,13 @@ rate limits turning amber or red). No emoji, no rainbow. An optional truecolor
 - Node.js **16+** on your `PATH` (`node --version`)
 - Claude Code with the status line feature (any recent version)
 
+> **CLI / terminal only.** The status line is a Claude Code **terminal** feature,
+> so this works in the CLI and in any terminal — including VS Code's *integrated
+> terminal* running `claude`. It does **not** render in the IDE extensions'
+> native panels (VS Code / JetBrains), which don't support `statusLine` yet
+> ([open feature request](https://github.com/anthropics/claude-code/issues/55643)).
+> In VS Code you can set `"claudeCode.useTerminal": true` to run in terminal mode.
+
 ## Install
 
 ```bash
