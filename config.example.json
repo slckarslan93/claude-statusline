@@ -1,0 +1,40 @@
+{
+  "segments": [
+    "dir",
+    "git",
+    "model",
+    "fast",
+    "effort",
+    "thinking",
+    "context",
+    "cache",
+    "cost",
+    "lines",
+    "duration",
+    "rate5h",
+    "rate7d",
+    "pr",
+    "agent"
+  ],
+  "separator": "  ",
+  "divider": "·",
+  "colors": true,
+  "icons": true,
+
+  "context": {
+    "bar": true,
+    "barWidth": 10,
+    "showTokens": true,
+    "showSize": true,
+    "warnAt": 50,
+    "critAt": 80
+  },
+  "cache": { "warnAt": 40, "critAt": 70 },
+  "rate": { "warnAt": 50, "critAt": 80, "countdown": true },
+  "cost": { "decimals": 2 },
+  "duration": { "showApi": false },
+  "git": { "enabled": true, "timeoutMs": 250, "showRepo": true },
+  "dir": { "useProjectDir": false },
+
+  "caveman": { "enabled": false }
+}

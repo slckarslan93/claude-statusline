@@ -1,0 +1,39 @@
+{
+  "cwd": "/home/user/PatitechWeb",
+  "session_id": "abc123",
+  "model": { "id": "claude-opus-4-8", "display_name": "Opus" },
+  "workspace": {
+    "current_dir": "/home/user/PatitechWeb",
+    "project_dir": "/home/user/PatitechWeb",
+    "repo": { "host": "github.com", "owner": "acme", "name": "PatitechWeb" }
+  },
+  "version": "2.1.90",
+  "output_style": { "name": "default" },
+  "cost": {
+    "total_cost_usd": 0.1234,
+    "total_duration_ms": 735000,
+    "total_api_duration_ms": 42000,
+    "total_lines_added": 156,
+    "total_lines_removed": 23
+  },
+  "context_window": {
+    "total_input_tokens": 82000,
+    "total_output_tokens": 4200,
+    "context_window_size": 1000000,
+    "used_percentage": 8,
+    "remaining_percentage": 92,
+    "current_usage": {
+      "input_tokens": 8500,
+      "output_tokens": 4200,
+      "cache_creation_input_tokens": 5000,
+      "cache_read_input_tokens": 68500
+    }
+  },
+  "exceeds_200k_tokens": false,
+  "effort": { "level": "high" },
+  "thinking": { "enabled": true },
+  "rate_limits": {
+    "five_hour": { "used_percentage": 23.5, "resets_at": 1783306800 },
+    "seven_day": { "used_percentage": 41.2, "resets_at": 1783555200 }
+  }
+}

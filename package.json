@@ -1,0 +1,45 @@
+{
+  "name": "claude-statusline",
+  "version": "0.1.0",
+  "description": "A fast, zero-dependency, configurable status line for Claude Code — model, reasoning effort, context usage, cost, rate limits, git, and more.",
+  "keywords": [
+    "claude",
+    "claude-code",
+    "statusline",
+    "status-line",
+    "cli",
+    "tokens",
+    "cost"
+  ],
+  "license": "MIT",
+  "author": "slckarslan93",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/slckarslan93/claude-statusline.git"
+  },
+  "bugs": {
+    "url": "https://github.com/slckarslan93/claude-statusline/issues"
+  },
+  "homepage": "https://github.com/slckarslan93/claude-statusline#readme",
+  "type": "commonjs",
+  "bin": {
+    "claude-statusline": "bin/claude-statusline.js"
+  },
+  "main": "src/index.js",
+  "files": [
+    "bin/",
+    "src/",
+    "config.example.json",
+    "install.js",
+    "README.md",
+    "LICENSE"
+  ],
+  "scripts": {
+    "install-hook": "node install.js",
+    "uninstall-hook": "node install.js --uninstall",
+    "demo": "node bin/claude-statusline.js < test/sample.json"
+  },
+  "engines": {
+    "node": ">=16"
+  }
+}

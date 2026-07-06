@@ -1,0 +1,9 @@
+node_modules/
+*.log
+.DS_Store
+.idea/
+.vscode/
+# local user config / captured samples
+config.json
+statusline-input-sample.json
+*.local.json
