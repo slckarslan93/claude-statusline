@@ -7,6 +7,19 @@
 
 const { render } = require('../src');
 
+// `--reset-cost`: drop the per-task cost baseline so the next render rebaselines
+// to the current session total (task cost -> 0). Used to start a fresh task tab.
+if (process.argv.includes('--reset-cost')) {
+  try {
+    const os = require('os');
+    const path = require('path');
+    const fs = require('fs');
+    const dir = process.env.CLAUDE_CONFIG_DIR || path.join(os.homedir(), '.claude');
+    fs.unlinkSync(path.join(dir, 'claude-statusline', '.cost-baseline'));
+  } catch (_) {}
+  process.exit(0);
+}
+
 function emit(raw) {
   let data = {};
   try {

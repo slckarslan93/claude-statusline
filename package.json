@@ -37,7 +37,8 @@
   "scripts": {
     "install-hook": "node install.js",
     "uninstall-hook": "node install.js --uninstall",
-    "demo": "node bin/claude-statusline.js < test/sample.json"
+    "demo": "node bin/claude-statusline.js < test/sample.json",
+    "reset-cost": "node bin/claude-statusline.js --reset-cost"
   },
   "engines": {
     "node": ">=16"

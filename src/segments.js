@@ -157,13 +157,26 @@ const SEGMENTS = {
     return c.label('cache ') + c.paint(color, c.fmt.pct(hit));
   },
 
-  // Session cost in USD — neutral value, the $ self-labels.
+  // Cost in USD. Session total (neutral, the $ self-labels) and/or a per-task
+  // figure measured from a baseline that resets on a new session or on demand
+  // (`--reset-cost`). E.g. "$525.04 (task $2.10)".
   cost(d, cfg, c) {
-    const cost = d.cost && d.cost.total_cost_usd;
-    if (cost === null || cost === undefined) return '';
-    const s = c.fmt.money(cost, cfg.cost.decimals);
-    if (!s) return '';
-    return ico('cost', cfg) + c.paint('text', s);
+    const total = d.cost && d.cost.total_cost_usd;
+    if (total === null || total === undefined) return '';
+    const cc = cfg.cost || {};
+    const dec = cc.decimals === undefined ? 2 : cc.decimals;
+    const out = [];
+    if (cc.showSession !== false) {
+      const s = c.fmt.money(total, dec);
+      if (s) out.push(ico('cost', cfg) + c.paint('text', s));
+    }
+    if (cc.showTask === true) {
+      const task = costSinceBaseline(d.session_id, Number(total));
+      if (task !== null) {
+        out.push(c.label(`(${cc.taskLabel || 'task'} `) + c.paint('accent', c.fmt.money(task, dec)) + c.label(')'));
+      }
+    }
+    return out.join(' ');
   },
 
   // Lines added/removed — conventional muted green/red, self-marked by +/-.
@@ -257,6 +270,36 @@ const SEGMENTS = {
     }
   },
 };
+
+// Cost accrued since a stored baseline. The baseline auto-resets when the
+// session id changes (new session), when the file is missing, or when the total
+// drops below it; `--reset-cost` deletes the file so the next render rebaselines
+// to the current total (task cost -> 0). Returns null on any failure.
+function costSinceBaseline(sessionId, total) {
+  if (total === null || total === undefined || isNaN(total)) return null;
+  const skey = sessionId || 'default';
+  try {
+    const dir = process.env.CLAUDE_CONFIG_DIR || path.join(os.homedir(), '.claude');
+    const file = path.join(dir, 'claude-statusline', '.cost-baseline');
+    let base = null;
+    let sid = null;
+    try {
+      const j = JSON.parse(fs.readFileSync(file, 'utf8'));
+      base = typeof j.baseline === 'number' ? j.baseline : null;
+      sid = j.session_id;
+    } catch (_) {}
+    if (base === null || sid !== skey || base > total) {
+      base = total;
+      try {
+        fs.mkdirSync(path.dirname(file), { recursive: true });
+        fs.writeFileSync(file, JSON.stringify({ baseline: base, session_id: skey }));
+      } catch (_) {}
+    }
+    return Math.max(0, total - base);
+  } catch (_) {
+    return null;
+  }
+}
 
 function renderRate(d, cfg, c, key, label) {
   const rl = d.rate_limits && d.rate_limits[key];

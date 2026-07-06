@@ -55,7 +55,9 @@ const DEFAULTS = {
   },
   cache: { warnAt: 40, critAt: 70 },      // hit-rate thresholds (higher is better)
   rate: { warnAt: 50, critAt: 80, countdown: true },
-  cost: { decimals: 2 },
+  // showTask adds a per-task figure measured from a baseline (reset on a new
+  // session or via `--reset-cost`), e.g. "$525.04 (task $2.10)".
+  cost: { decimals: 2, showSession: true, showTask: false, taskLabel: 'task' },
   duration: { showApi: false },           // also show API-only time
   git: { enabled: true, timeoutMs: 250, showRepo: true },
   dir: { useProjectDir: false },          // false => current dir basename; true => project (launch) dir

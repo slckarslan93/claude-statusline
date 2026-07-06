@@ -191,7 +191,7 @@ stripped when measuring, so wrapping still lines up.
 | `thinking` | `think` when extended thinking is on | `thinking.enabled` |
 | `context` | Bar + percent + tokens + size | `context_window.*` |
 | `cache` | Prompt-cache hit rate | `context_window.current_usage` |
-| `cost` | Session cost in USD | `cost.total_cost_usd` |
+| `cost` | Session cost, and/or a per-task figure | `cost.total_cost_usd` |
 | `lines` | Lines added / removed | `cost.total_lines_*` |
 | `duration` | Wall-clock (and API) time | `cost.total_duration_ms` |
 | `rate5h` | 5-hour limit + reset countdown | `rate_limits.five_hour` |
@@ -205,6 +205,27 @@ stripped when measuring, so wrapping still lines up.
 | `caveman` | caveman plugin mode badge | reads `~/.claude/.caveman-active` |
 
 Several fields only appear in some sessions — `rate_limits` needs a Pro/Max subscription and a first API response, `effort` only on models that support it, `pr` only when a PR is open, `agent` only under `--agent`, and `current_usage` is `null` right after `/compact`. Every segment handles absence by rendering nothing.
+
+### Per-task cost
+
+`cost.total_cost_usd` is the running total for the **whole session**, so on a
+long-lived session it keeps climbing across many tasks. Enable `cost.showTask`
+to also show a per-task figure measured from a baseline:
+
+```json
+{ "cost": { "showSession": true, "showTask": true, "taskLabel": "task" } }
+```
+
+renders `$525.04 (task $2.10)`. The baseline resets automatically when the
+session changes, and on demand when you start a new task:
+
+```bash
+node bin/claude-statusline.js --reset-cost   # or: npm run reset-cost
+```
+
+The next render rebaselines to the current total, so `task` starts again at
+`$0.00`. Both figures are the same client-side estimate as the session total —
+the equivalent API cost, not a subscription charge.
 
 ## Notes on the numbers
 

@@ -40,7 +40,7 @@
   },
   "cache": { "warnAt": 40, "critAt": 70 },
   "rate": { "warnAt": 50, "critAt": 80, "countdown": true },
-  "cost": { "decimals": 2 },
+  "cost": { "decimals": 2, "showSession": true, "showTask": false, "taskLabel": "task" },
   "duration": { "showApi": false },
   "git": { "enabled": true, "timeoutMs": 250, "showRepo": true },
   "dir": { "useProjectDir": false },
