@@ -76,10 +76,10 @@ The `segments` array is the heart of it — it controls **what shows and in what
   "icons": false,
   "gradient": { "enabled": false, "appliesTo": "model", "periodMs": 5000, "spread": 0.55,
                 "stops": ["#F6C46F", "#F38868", "#E56C8A", "#D879BB"] },
-  "context": { "bar": true, "barWidth": 10, "showTokens": true, "showSize": true, "warnAt": 50, "critAt": 80 },
+  "context": { "bar": true, "barWidth": 10, "showTokens": true, "showSize": true, "warnAt": 50, "critAt": 80, "warn200k": false },
   "cache": { "warnAt": 40, "critAt": 70 },
   "rate": { "warnAt": 50, "critAt": 80, "countdown": true },
-  "cost": { "decimals": 2 },
+  "cost": { "decimals": 2, "showSession": true, "showTask": false, "taskLabel": "task" },
   "duration": { "showApi": false },
   "git": { "enabled": true, "timeoutMs": 250, "showRepo": true },
   "dir": { "useProjectDir": false },
@@ -103,16 +103,47 @@ The `segments` array is the heart of it — it controls **what shows and in what
 | `context.bar` / `barWidth` | `true` / `10` | Draw a `▓▓░░` usage bar and its width |
 | `context.showTokens` / `showSize` | `true` / `true` | Append `185k` and `/1M` |
 | `context.warnAt` / `critAt` | `50` / `80` | Percent thresholds → yellow / red |
+| `context.warn200k` | `false` | Show a `200k!` marker on `exceeds_200k_tokens` (noise on 1M context) |
 | `cache.warnAt` / `critAt` | `40` / `70` | Cache-hit thresholds (higher is better) |
 | `rate.warnAt` / `critAt` | `50` / `80` | Rate-limit thresholds → yellow / red |
 | `rate.countdown` | `true` | Show time until each window resets |
 | `cost.decimals` | `2` | Decimal places for the USD figure |
+| `cost.showSession` | `true` | Show the running session total |
+| `cost.showTask` | `false` | Also show a per-task figure from a resettable baseline |
+| `cost.taskLabel` | `"task"` | Label for the per-task figure, e.g. `(task $2.10)` |
 | `duration.showApi` | `false` | Also show API-only time |
 | `git.enabled` | `true` | Run `git` to read the branch |
 | `git.timeoutMs` | `250` | Give up on the git call after this |
 | `git.showRepo` | `true` | Append the repo name from the payload |
 | `dir.useProjectDir` | `false` | `false` → current dir; `true` → launch dir |
 | `caveman.enabled` | `false` | Prepend the [caveman](https://github.com/JuliusBrussee/caveman) plugin's mode badge if active |
+
+### Turning segments on and off
+
+Everything is toggled in one place — the `segments` array. The **default set** is:
+
+```
+dir · git · model · fast · effort · thinking · context · cache · cost · lines · rate5h · pr · agent
+```
+
+- **Disable** a segment → remove its name from `segments`.
+- **Enable** one that's off by default → add its name where you want it to appear.
+- **Reorder** → move the names around; order in the array is order on the line.
+
+Available but **off by default** (add the name to switch on):
+
+| Segment | Shows |
+|---------|-------|
+| `duration` | Wall-clock session time |
+| `rate7d` | 7-day rate limit + reset |
+| `session` | Custom session name (`--name` / `/rename`) |
+| `outputStyle` | Output style when not `default` |
+| `vim` | Vim mode |
+| `version` | Claude Code version |
+
+A segment with no data for the current session renders nothing, so `pr`, `agent`,
+and the `rate*` segments only take up space when they actually apply. Save the
+file and the next render picks it up — no restart needed.
 
 ### Multiple lines
 
@@ -133,7 +164,7 @@ renders as two rows:
 
 ```
 [CAVEMAN]
-📁 my-app  ·  ⎇ main  ·  🤖 Opus 4.8  ·  ⚡ max  ·  [▓▓░░░░░░░░] 18% 185k/1M  ·  ♻ cache 100%  ·  💰 $0.42  ·  5h:2% 3h 7m  ·  7d:61% 52h 37m
+my-app │ main │ Opus 4.8 │ max │ ctx 18% 185k/1M │ cache 100% │ $0.42 │ 5h 2% 3h 7m │ 7d 61% 52h 37m
 ```
 
 A line that renders empty (e.g. the caveman badge when caveman isn't active) is
@@ -254,7 +285,7 @@ Removes only our `statusLine` entry (after a backup) and leaves everything else 
 
 ## How it works
 
-Claude Code runs your `statusLine` command after every turn and pipes a JSON snapshot of the session to it on stdin. This tool parses that JSON, walks your `segments` list, renders each into a small coloured string, and prints one line. No network, no state, no files written. See the [status line docs](https://code.claude.com/docs/en/statusline) for the full payload schema.
+Claude Code runs your `statusLine` command after every turn and pipes a JSON snapshot of the session to it on stdin. This tool parses that JSON, walks your `segments` list, renders each into a small coloured string, and prints the line(s). No network calls; the only thing it ever writes is the optional per-task cost baseline under `~/.claude/claude-statusline/`. See the [status line docs](https://code.claude.com/docs/en/statusline) for the full payload schema.
 
 ## License
 
