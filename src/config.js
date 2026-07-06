@@ -8,6 +8,8 @@ const os = require('os');
 // order; remove or reorder names to customise. Anything not in the list is
 // simply not shown, even if the data is present.
 const DEFAULTS = {
+  // Default set. duration, rate7d and a few others are available but off by
+  // default — add their names here to show them.
   segments: [
     'dir',
     'git',
@@ -19,9 +21,7 @@ const DEFAULTS = {
     'cache',
     'cost',
     'lines',
-    'duration',
     'rate5h',
-    'rate7d',
     'pr',
     'agent',
   ],
@@ -52,6 +52,7 @@ const DEFAULTS = {
     showSize: true,       // append "/200k" window size
     warnAt: 50,           // percent -> yellow
     critAt: 80,           // percent -> red
+    warn200k: false,      // show a "200k!" marker on exceeds_200k_tokens (noisy on 1M context)
   },
   cache: { warnAt: 40, critAt: 70 },      // hit-rate thresholds (higher is better)
   rate: { warnAt: 50, critAt: 80, countdown: true },

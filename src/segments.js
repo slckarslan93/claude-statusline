@@ -139,7 +139,7 @@ const SEGMENTS = {
       }
       out += ' ' + c.label(tok);
     }
-    if (d.exceeds_200k_tokens) out += ' ' + c.paint('crit', '200k!');
+    if (cfg.context.warn200k && d.exceeds_200k_tokens) out += ' ' + c.paint('crit', '200k!');
     return out;
   },
 

@@ -10,9 +10,7 @@
     "cache",
     "cost",
     "lines",
-    "duration",
     "rate5h",
-    "rate7d",
     "pr",
     "agent"
   ],
@@ -36,7 +34,8 @@
     "showTokens": true,
     "showSize": true,
     "warnAt": 50,
-    "critAt": 80
+    "critAt": 80,
+    "warn200k": false
   },
   "cache": { "warnAt": 40, "critAt": 70 },
   "rate": { "warnAt": 50, "critAt": 80, "countdown": true },

@@ -68,8 +68,7 @@ The `segments` array is the heart of it — it controls **what shows and in what
 ```json
 {
   "segments": ["dir", "git", "model", "fast", "effort", "thinking",
-               "context", "cache", "cost", "lines", "duration",
-               "rate5h", "rate7d", "pr", "agent"],
+               "context", "cache", "cost", "lines", "rate5h", "pr", "agent"],
   "separator": " ",
   "divider": "│",
   "colors": true,
