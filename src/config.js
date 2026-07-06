@@ -67,6 +67,7 @@ const DEFAULTS = {
     showSession: true,
     showMessage: false,
     showTask: false,
+    sessionLabel: '',       // '' -> bare "$549"; set e.g. "ses" -> "(ses $549)"
     messageLabel: 'msg',
     taskLabel: 'task',
   },
@@ -106,12 +107,43 @@ function merge(base, over) {
   return out;
 }
 
+// Strip // line and /* */ block comments so the config can be JSONC (commented
+// JSON). String contents are preserved, so a "//" inside a value is safe.
+function stripJsonComments(str) {
+  let out = '';
+  let inStr = false, inLine = false, inBlock = false, esc = false;
+  for (let i = 0; i < str.length; i++) {
+    const c = str[i];
+    const n = str[i + 1];
+    if (inLine) {
+      if (c === '\n') { inLine = false; out += c; }
+      continue;
+    }
+    if (inBlock) {
+      if (c === '*' && n === '/') { inBlock = false; i++; }
+      continue;
+    }
+    if (inStr) {
+      out += c;
+      if (esc) esc = false;
+      else if (c === '\\') esc = true;
+      else if (c === '"') inStr = false;
+      continue;
+    }
+    if (c === '"') { inStr = true; out += c; continue; }
+    if (c === '/' && n === '/') { inLine = true; i++; continue; }
+    if (c === '/' && n === '*') { inBlock = true; i++; continue; }
+    out += c;
+  }
+  return out;
+}
+
 function loadConfig() {
   for (const p of configPaths()) {
     try {
       if (p && fs.existsSync(p)) {
         const raw = fs.readFileSync(p, 'utf8');
-        const user = JSON.parse(raw);
+        const user = JSON.parse(stripJsonComments(raw));
         return merge(DEFAULTS, user);
       }
     } catch (_) {

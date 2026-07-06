@@ -61,7 +61,7 @@ If you'd rather wire it yourself, add this to `~/.claude/settings.json`:
 
 ## Configuration
 
-Copy [`config.example.json`](./config.example.json) to `~/.claude/claude-statusline/config.json` (the installer does this for you) and edit. You can also point at a config anywhere with the `CLAUDE_STATUSLINE_CONFIG` environment variable.
+Copy [`config.example.json`](./config.example.json) to `~/.claude/claude-statusline/config.json` (the installer does this for you) and edit. You can also point at a config anywhere with the `CLAUDE_STATUSLINE_CONFIG` environment variable. The config is **JSONC** — `//` and `/* */` comments are allowed (the shipped example is annotated), so you can note what each option does inline.
 
 The `segments` array is the heart of it — it controls **what shows and in what order**. Drop names you don't want, reorder freely; a segment with no data simply renders nothing.
 
@@ -113,6 +113,7 @@ The `segments` array is the heart of it — it controls **what shows and in what
 | `cost.showTask` | `false` | Also show a per-task figure from a resettable baseline |
 | `cost.messageLabel` | `"msg"` | Label for the per-message figure, e.g. `(msg $0.02)` |
 | `cost.taskLabel` | `"task"` | Label for the per-task figure, e.g. `(task $2.10)` |
+| `cost.sessionLabel` | `""` | Empty → bare `$549`; set (e.g. `"ses"`) → `(ses $549)` |
 | `duration.showApi` | `false` | Also show API-only time |
 | `git.enabled` | `true` | Run `git` to read the branch |
 | `git.timeoutMs` | `250` | Give up on the git call after this |
@@ -238,20 +239,34 @@ stripped when measuring, so wrapping still lines up.
 
 Several fields only appear in some sessions — `rate_limits` needs a Pro/Max subscription and a first API response, `effort` only on models that support it, `pr` only when a PR is open, `agent` only under `--agent`, and `current_usage` is `null` right after `/compact`. Every segment handles absence by rendering nothing.
 
-### Cost: session, message, task
+### Cost: message, task, session
 
-The `cost` segment can show up to three figures side by side, e.g.
-`$525.04 (msg $0.02) (conv $2.10)`:
+The `cost` segment shows up to three nested figures, smallest to largest, e.g.
+`(msg $0.02) (conv $2.10) (ses $525.04)`:
 
-| Level | Enable | Resets |
-|-------|--------|--------|
-| **Session** total | `showSession` (default on) | Never — Claude Code's running total for the whole session |
-| **Message** cost | `showMessage` | At the start of every user message (needs the hook below) |
-| **Task** cost | `showTask` | Manually with `--reset-cost` — use it to mark a new task/conversation |
+```
+session  ⊃  task  ⊃  message
+```
 
-`messageLabel` / `taskLabel` set the labels (defaults `msg` / `task`).
+| Level | Enable | Covers | Resets |
+|-------|--------|--------|--------|
+| **message** | `showMessage` | One exchange (this message + its reply) | Automatically, at the start of every user message (needs the hook below) |
+| **task** | `showTask` | A group of messages — one task or conversation | Manually with `--reset-cost` — run it when you start something new |
+| **session** | `showSession` (default on) | The whole Claude Code run (open → `/clear`) | Only on a new session / `/clear` |
 
-All three are the same client-side estimate — the equivalent API cost — and each
+Worked example, after resetting `task` at the start of a job:
+
+| You send | `msg` | `task` |
+|----------|-------|--------|
+| "make it minimal" | $0.30 | $0.30 |
+| "drop the emoji"  | $0.20 | $0.50 |
+| "add cost"        | $0.40 | $0.90 |
+
+`msg` is always just the current message; `task` accumulates until you reset it.
+
+Labels are set by `messageLabel` / `taskLabel` / `sessionLabel` (`session` shows
+bare `$549` when `sessionLabel` is empty, or `(ses $549)` when you name it). All
+three are the same client-side estimate — the equivalent API cost — and each
 covers **everything the session bills**: your input, the model's output, tool
 calls, and any sub-agents or workflows spawned along the way (not just your
 messages).

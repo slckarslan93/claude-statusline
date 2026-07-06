@@ -165,21 +165,26 @@ const SEGMENTS = {
     if (total === null || total === undefined) return '';
     const cc = cfg.cost || {};
     const dec = cc.decimals === undefined ? 2 : cc.decimals;
+    // "(label $value)" with a dim label and a warm-gold value.
+    const part = (label, value) =>
+      c.label(`(${label} `) + c.paint('money', c.fmt.money(value, dec)) + c.label(')');
     const out = [];
-    if (cc.showSession !== false) {
-      const s = c.fmt.money(total, dec);
-      if (s) out.push(ico('cost', cfg) + c.paint('text', s));
-    }
+    // Smallest to largest: message -> task -> session.
     if (cc.showMessage === true) {
-      const msg = costSinceMessage(Number(total));
-      if (msg !== null) {
-        out.push(c.label(`(${cc.messageLabel || 'msg'} `) + c.paint('accent', c.fmt.money(msg, dec)) + c.label(')'));
-      }
+      const m = costSinceMessage(Number(total));
+      if (m !== null) out.push(part(cc.messageLabel || 'msg', m));
     }
     if (cc.showTask === true) {
-      const task = costSinceBaseline(d.session_id, Number(total));
-      if (task !== null) {
-        out.push(c.label(`(${cc.taskLabel || 'task'} `) + c.paint('accent', c.fmt.money(task, dec)) + c.label(')'));
+      const t = costSinceBaseline(d.session_id, Number(total));
+      if (t !== null) out.push(part(cc.taskLabel || 'task', t));
+    }
+    if (cc.showSession !== false) {
+      // Labeled + parenthesised when sessionLabel is set; otherwise a bare $total.
+      if (cc.sessionLabel) {
+        out.push(part(cc.sessionLabel, Number(total)));
+      } else {
+        const s = c.fmt.money(total, dec);
+        if (s) out.push(ico('cost', cfg) + c.paint('money', s));
       }
     }
     return out.join(' ');

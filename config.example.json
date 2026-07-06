@@ -1,4 +1,7 @@
 {
+  // Each name is a segment; array order is on-screen order. Remove to hide,
+  // add to show. Off by default (add to enable): duration, rate7d, session,
+  // outputStyle, vim, version. Use an array of arrays for multiple lines.
   "segments": [
     "dir",
     "git",
@@ -14,35 +17,42 @@
     "pr",
     "agent"
   ],
+
   "separator": " ",
   "divider": "│",
   "colors": true,
-  "truecolor": true,
-  "icons": false,
+  "truecolor": true,          // false -> 256-colour fallback
+  "icons": false,             // true -> emoji glyphs instead of the text theme
+
+  // Optional per-render shimmer across the model name (truecolor only).
   "gradient": {
     "enabled": false,
-    "appliesTo": "model",
-    "periodMs": 5000,
+    "appliesTo": "model",     // "model" or "dir"
+    "periodMs": 5000,         // lower drifts faster
     "spread": 0.55,
     "stops": ["#F6C46F", "#F38868", "#E56C8A", "#D879BB"]
   },
-  "wrap": { "enabled": true, "maxWidth": 0, "fallbackWidth": 100 },
 
-  "context": {
-    "bar": true,
-    "barWidth": 10,
-    "showTokens": true,
-    "showSize": true,
-    "warnAt": 50,
-    "critAt": 80,
-    "warn200k": false
-  },
+  "wrap": { "enabled": true, "maxWidth": 0, "fallbackWidth": 100 }, // 0 = auto width
+
+  "context": { "bar": true, "barWidth": 10, "showTokens": true, "showSize": true, "warnAt": 50, "critAt": 80, "warn200k": false },
   "cache": { "warnAt": 40, "critAt": 70 },
   "rate": { "warnAt": 50, "critAt": 80, "countdown": true },
-  "cost": { "decimals": 2, "showSession": true, "showMessage": false, "showTask": false, "messageLabel": "msg", "taskLabel": "task" },
+
+  // Cost, shown smallest to largest: message -> task -> session.
+  "cost": {
+    "decimals": 2,
+    "showMessage": false,     // per-message cost; resets each message (needs the --mark-message hook)
+    "showTask": false,        // per-task cost; you reset it with --reset-cost
+    "showSession": true,      // whole-session running total
+    "messageLabel": "msg",
+    "taskLabel": "task",
+    "sessionLabel": ""        // "" -> bare "$549"; set e.g. "ses" -> "(ses $549)"
+  },
+
   "duration": { "showApi": false },
   "git": { "enabled": true, "timeoutMs": 250, "showRepo": true },
-  "dir": { "useProjectDir": false },
+  "dir": { "useProjectDir": false }, // false = current dir, true = launch dir
 
   "caveman": { "enabled": false }
 }

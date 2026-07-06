@@ -12,6 +12,7 @@ const PALETTE = {
   warn: { rgb: [0xeb, 0xcb, 0x8b], c256: 222 },
   crit: { rgb: [0xcb, 0x6b, 0x72], c256: 167 },
   orange: { rgb: [0xe0, 0x9a, 0x5f], c256: 173 }, // caveman badge brand
+  money: { rgb: [0xe5, 0xb8, 0x5c], c256: 179 }, // warm gold — cost figures
 };
 
 // Back-compat aliases so any older colour name still resolves after the de-hue.
