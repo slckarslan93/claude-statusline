@@ -132,7 +132,7 @@ const SEGMENTS = {
     let out = c.label('ctx ');
     if (cfg.context.bar) out += c.paint(color, bar(usedPct, cfg.context.barWidth)) + ' ';
     out += c.paint(color, c.fmt.pct(usedPct));
-    if (cfg.context.showTokens && cw.total_input_tokens !== undefined) {
+    if (cfg.context.showTokens && cw.total_input_tokens != null) {
       let tok = c.fmt.tokens(cw.total_input_tokens);
       if (cfg.context.showSize && cw.context_window_size) {
         tok += '/' + c.fmt.windowSize(cw.context_window_size);
@@ -191,12 +191,21 @@ const SEGMENTS = {
   },
 
   // Lines added/removed — conventional muted green/red, self-marked by +/-.
+  // Session totals by default; lines.showTask shows the delta since the last
+  // --reset-cost (the per-conversation change), like the per-task cost figure.
   lines(d, cfg, c) {
     const cost = d.cost || {};
-    const add = cost.total_lines_added;
-    const rem = cost.total_lines_removed;
+    let add = Number(cost.total_lines_added || 0);
+    let rem = Number(cost.total_lines_removed || 0);
+    if (cfg.lines && cfg.lines.showTask === true) {
+      const delta = linesSinceBaseline(d.session_id, add, rem);
+      if (delta) {
+        add = delta.added;
+        rem = delta.removed;
+      }
+    }
     if (!add && !rem) return '';
-    return c.paint('good', `+${add || 0}`) + c.label('/') + c.paint('crit', `-${rem || 0}`);
+    return c.paint('good', `+${add}`) + c.label('/') + c.paint('crit', `-${rem}`);
   },
 
   // Wall-clock session duration (dim, secondary). Optional API-only time.
@@ -338,6 +347,37 @@ function costSinceMessage(total) {
       if (reset) { try { fs.unlinkSync(flagFile); } catch (_) {} }
     }
     return Math.max(0, total - base);
+  } catch (_) {
+    return null;
+  }
+}
+
+// Lines added/removed since a stored baseline (the per-conversation change).
+// Auto-resets on a new session, a missing file, or when a total drops; cleared
+// by --reset-cost so a new conversation starts from +0/-0. Returns null on failure.
+function linesSinceBaseline(sessionId, added, removed) {
+  const skey = sessionId || 'default';
+  try {
+    const dir = path.join(process.env.CLAUDE_CONFIG_DIR || path.join(os.homedir(), '.claude'), 'claude-statusline');
+    const file = path.join(dir, '.lines-baseline');
+    let ba = null;
+    let br = null;
+    let sid = null;
+    try {
+      const j = JSON.parse(fs.readFileSync(file, 'utf8'));
+      if (typeof j.added === 'number') ba = j.added;
+      if (typeof j.removed === 'number') br = j.removed;
+      sid = j.session_id;
+    } catch (_) {}
+    if (ba === null || br === null || sid !== skey || ba > added || br > removed) {
+      ba = added;
+      br = removed;
+      try {
+        fs.mkdirSync(dir, { recursive: true });
+        fs.writeFileSync(file, JSON.stringify({ added: ba, removed: br, session_id: skey }));
+      } catch (_) {}
+    }
+    return { added: Math.max(0, added - ba), removed: Math.max(0, removed - br) };
   } catch (_) {
     return null;
   }

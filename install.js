@@ -28,13 +28,25 @@ const command = `node "${binPath}"`;
 
 function log(msg) { process.stdout.write(msg + '\n'); }
 
+// Returns {} when settings.json is absent or empty. Throws on a non-empty but
+// invalid file so the caller can ABORT instead of overwriting a real config.
 function readSettings() {
+  if (!fs.existsSync(settingsPath)) return {};
+  let raw = fs.readFileSync(settingsPath, 'utf8');
+  if (raw.charCodeAt(0) === 0xfeff) raw = raw.slice(1); // strip BOM (Notepad etc.)
+  if (!raw.trim()) return {};
+  return JSON.parse(raw);
+}
+
+// Read, or abort the whole run if settings.json is invalid — never fall through
+// to {} and clobber the user's permissions/hooks/env.
+function readSettingsOrAbort() {
   try {
-    const raw = fs.readFileSync(settingsPath, 'utf8');
-    if (!raw.trim()) return {};
-    return JSON.parse(raw);
-  } catch (_) {
-    return {};
+    return readSettings();
+  } catch (e) {
+    log('  ! ~/.claude/settings.json is not valid JSON — aborting, nothing changed.');
+    log('    ' + e.message);
+    process.exit(1);
   }
 }
 
@@ -50,7 +62,10 @@ function save(obj) {
   const json = JSON.stringify(obj, null, 2);
   JSON.parse(json); // validate before overwriting
   fs.mkdirSync(path.dirname(settingsPath), { recursive: true });
-  fs.writeFileSync(settingsPath, json, 'utf8');
+  // Write atomically: a crash mid-write can't leave a truncated settings.json.
+  const tmp = `${settingsPath}.tmp`;
+  fs.writeFileSync(tmp, json, 'utf8');
+  fs.renameSync(tmp, settingsPath);
 }
 
 function isOurs(sl) {
@@ -64,7 +79,7 @@ if (printOnly) {
 
 if (uninstall) {
   log('Uninstalling claude-statusline');
-  const s = readSettings();
+  const s = readSettingsOrAbort();
   if (isOurs(s.statusLine)) {
     backup();
     delete s.statusLine;
@@ -93,7 +108,7 @@ if (!fs.existsSync(cfgPath)) {
 }
 
 // 2) merge the statusLine command into settings.json
-const s = readSettings();
+const s = readSettingsOrAbort();
 const prev = s.statusLine;
 if (prev && !isOurs(prev)) {
   log('  ! replacing an existing statusLine command:');

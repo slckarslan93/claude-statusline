@@ -2,7 +2,7 @@
 
 const colors = require('./colors');
 const fmt = require('./format');
-const { loadConfig } = require('./config');
+const { loadConfig, DEFAULTS } = require('./config');
 const { SEGMENTS, ICONS } = require('./segments');
 
 // Build the per-render helper bundle passed to every segment. Colour enabled
@@ -97,11 +97,12 @@ function wrapPieces(pieces, sep, sepW, maxW) {
 function render(data, configOverride) {
   const cfg = configOverride || loadConfig();
   const c = makeHelpers(cfg);
-  const segs = cfg.segments || [];
+  // Guard against a mistyped `segments` (e.g. a string) blanking the whole line.
+  const segs = Array.isArray(cfg.segments) ? cfg.segments : DEFAULTS.segments;
   const multiline = segs.some((s) => Array.isArray(s));
   const lineDefs = multiline ? segs.map((s) => (Array.isArray(s) ? s : [s])) : [segs];
 
-  const div = cfg.divider ? colors.paint('grayDim', cfg.divider, c.enabled) : '';
+  const div = cfg.divider ? colors.paint('grayDim', cfg.divider, c.enabled, c.truecolor) : '';
   const sep = div ? `${cfg.separator}${div}${cfg.separator}` : cfg.separator;
   const sepW = fmt.stringWidth(sep);
 

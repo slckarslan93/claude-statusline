@@ -50,6 +50,10 @@
     "sessionLabel": ""        // "" -> bare "$549"; set e.g. "ses" -> "(ses $549)"
   },
 
+  // Lines changed. showTask -> since last --reset-cost (this conversation),
+  // otherwise the whole-session total.
+  "lines": { "showTask": false },
+
   "duration": { "showApi": false },
   "git": { "enabled": true, "timeoutMs": 250, "showRepo": true },
   "dir": { "useProjectDir": false }, // false = current dir, true = launch dir

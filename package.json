@@ -35,12 +35,13 @@
     "LICENSE"
   ],
   "scripts": {
+    "test": "node --test",
     "install-hook": "node install.js",
     "uninstall-hook": "node install.js --uninstall",
     "demo": "node bin/claude-statusline.js < test/sample.json",
     "reset-cost": "node bin/claude-statusline.js --reset-cost"
   },
   "engines": {
-    "node": ">=16"
+    "node": ">=18"
   }
 }

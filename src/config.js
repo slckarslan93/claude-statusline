@@ -71,6 +71,9 @@ const DEFAULTS = {
     messageLabel: 'msg',
     taskLabel: 'task',
   },
+  // showTask: show lines changed since the last --reset-cost (the current
+  // conversation's change) instead of the whole-session total.
+  lines: { showTask: false },
   duration: { showApi: false },           // also show API-only time
   git: { enabled: true, timeoutMs: 250, showRepo: true },
   dir: { useProjectDir: false },          // false => current dir basename; true => project (launch) dir
@@ -142,7 +145,8 @@ function loadConfig() {
   for (const p of configPaths()) {
     try {
       if (p && fs.existsSync(p)) {
-        const raw = fs.readFileSync(p, 'utf8');
+        let raw = fs.readFileSync(p, 'utf8');
+        if (raw.charCodeAt(0) === 0xfeff) raw = raw.slice(1); // strip BOM (Notepad etc.)
         const user = JSON.parse(stripJsonComments(raw));
         return merge(DEFAULTS, user);
       }
@@ -154,4 +158,4 @@ function loadConfig() {
   return merge(DEFAULTS, {});
 }
 
-module.exports = { DEFAULTS, loadConfig, merge, configPaths };
+module.exports = { DEFAULTS, loadConfig, merge, configPaths, stripJsonComments };

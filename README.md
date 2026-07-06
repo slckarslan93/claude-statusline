@@ -121,6 +121,7 @@ The `segments` array is the heart of it — it controls **what shows and in what
 | `cost.messageLabel` | `"msg"` | Label for the per-message figure, e.g. `(msg $0.02)` |
 | `cost.taskLabel` | `"task"` | Label for the per-task figure, e.g. `(task $2.10)` |
 | `cost.sessionLabel` | `""` | Empty → bare `$549`; set (e.g. `"ses"`) → `(ses $549)` |
+| `lines.showTask` | `false` | Lines changed since `--reset-cost` (this conversation) instead of the session total |
 | `duration.showApi` | `false` | Also show API-only time |
 | `git.enabled` | `true` | Run `git` to read the branch |
 | `git.timeoutMs` | `250` | Give up on the git call after this |
@@ -232,7 +233,7 @@ stripped when measuring, so wrapping still lines up.
 | `context` | Bar + percent + tokens + size | `context_window.*` |
 | `cache` | Prompt-cache hit rate | `context_window.current_usage` |
 | `cost` | Session cost, and/or a per-task figure | `cost.total_cost_usd` |
-| `lines` | Lines added / removed | `cost.total_lines_*` |
+| `lines` | Lines added / removed (session, or per-conversation) | `cost.total_lines_*` |
 | `duration` | Wall-clock (and API) time | `cost.total_duration_ms` |
 | `rate5h` | 5-hour limit + reset countdown | `rate_limits.five_hour` |
 | `rate7d` | 7-day limit + reset countdown | `rate_limits.seven_day` |
@@ -302,6 +303,10 @@ start something new and it counts from `$0.00`:
 ```bash
 node bin/claude-statusline.js --reset-cost   # or: npm run reset-cost
 ```
+
+`--reset-cost` also resets the **`lines`** counter, so with `"lines": { "showTask": true }`
+the `+156/-23` figure shows only the lines changed **in the current conversation**
+(the change you asked for) rather than the whole-session total.
 
 ## Notes on the numbers
 
