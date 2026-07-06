@@ -1,5 +1,7 @@
 # claude-statusline
 
+**English** · [Türkçe](README.tr.md)
+
 **A fast, zero-dependency, configurable status line for [Claude Code](https://claude.com/claude-code).**
 
 One line at the bottom of your terminal, always current: which model and reasoning effort you're on, how full the context window is, what the session has cost, how close you are to your rate limits, git branch, lines changed, and more — all driven by the JSON Claude Code hands its status line on every turn.
