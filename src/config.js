@@ -30,6 +30,10 @@ const DEFAULTS = {
   colors: true,           // false (or NO_COLOR env) => plain text
   icons: true,            // false => text labels instead of emoji/glyphs
 
+  // Word-wrap each logical line to the terminal width so nothing is clipped.
+  // maxWidth 0 => auto-detect (stdout/COLUMNS/stderr); set a number to force it.
+  wrap: { enabled: true, maxWidth: 0, fallbackWidth: 100 },
+
   context: {
     bar: true,            // draw a ▓▓░░ usage bar
     barWidth: 10,

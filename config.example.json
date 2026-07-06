@@ -20,6 +20,7 @@
   "divider": "·",
   "colors": true,
   "icons": true,
+  "wrap": { "enabled": true, "maxWidth": 0, "fallbackWidth": 100 },
 
   "context": {
     "bar": true,

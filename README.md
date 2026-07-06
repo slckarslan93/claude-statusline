@@ -124,6 +124,28 @@ renders as two rows:
 A line that renders empty (e.g. the caveman badge when caveman isn't active) is
 dropped, so you never get a stray blank row.
 
+### Wrapping
+
+By default every logical line is **word-wrapped to your terminal width** so no
+segment is ever clipped — when a line is too long, the overflow flows onto the
+next row instead of being cut off. Width is measured in real terminal cells
+(ANSI colour codes are ignored and emoji count as two), and segments are never
+split mid-way.
+
+Width is auto-detected. Inside the status line hook stdout isn't a TTY, so if
+auto-detection comes up empty it falls back to `wrap.fallbackWidth`. If wrapping
+doesn't match your terminal, set an explicit width:
+
+```json
+{ "wrap": { "enabled": true, "maxWidth": 120, "fallbackWidth": 100 } }
+```
+
+| Key | Default | Meaning |
+|-----|---------|---------|
+| `wrap.enabled` | `true` | Wrap to width; `false` → one line, terminal truncates |
+| `wrap.maxWidth` | `0` | `0` = auto-detect; a number forces that width |
+| `wrap.fallbackWidth` | `100` | Used only when auto-detection finds nothing |
+
 ## Segments
 
 | Name | Shows | Source |

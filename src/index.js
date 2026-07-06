@@ -21,8 +21,8 @@ function makeHelpers(cfg) {
   };
 }
 
-// Render a single line from a list of segment names.
-function renderLine(names, data, cfg, c) {
+// Render a list of segment names into an array of non-empty coloured strings.
+function renderPieces(names, data, cfg, c) {
   const out = [];
   for (const name of names) {
     const fn = SEGMENTS[name];
@@ -35,18 +35,52 @@ function renderLine(names, data, cfg, c) {
     }
     if (piece && String(piece).length) out.push(piece);
   }
-  const div = cfg.divider ? colors.paint('grayDim', cfg.divider, c.enabled) : '';
-  const sep = div ? `${cfg.separator}${div}${cfg.separator}` : cfg.separator;
-  return out.join(sep);
+  return out;
+}
+
+// Resolve the usable terminal width. An explicit wrap.maxWidth wins; otherwise
+// we try every place a width might surface (stdout is piped inside the hook, so
+// it's usually undefined there) and fall back to a configured default.
+function terminalWidth(cfg) {
+  const w = cfg.wrap && cfg.wrap.maxWidth;
+  if (w && w > 0) return w;
+  const envCols = parseInt(process.env.COLUMNS, 10);
+  const cand =
+    (process.stdout && process.stdout.columns) ||
+    (Number.isFinite(envCols) && envCols) ||
+    (process.stderr && process.stderr.columns);
+  if (cand && cand > 0) return cand;
+  return (cfg.wrap && cfg.wrap.fallbackWidth) || 100;
+}
+
+// Greedily pack pieces into physical lines no wider than maxW. A piece is never
+// split; one wider than maxW simply gets its own line.
+function wrapPieces(pieces, sep, sepW, maxW) {
+  const lines = [];
+  let cur = [];
+  let curW = 0;
+  for (const p of pieces) {
+    const pw = fmt.stringWidth(p);
+    const add = (cur.length ? sepW : 0) + pw;
+    if (cur.length && curW + add > maxW) {
+      lines.push(cur.join(sep));
+      cur = [p];
+      curW = pw;
+    } else {
+      cur.push(p);
+      curW += add;
+    }
+  }
+  if (cur.length) lines.push(cur.join(sep));
+  return lines;
 }
 
 // Render the full status line for a parsed Claude Code payload.
 //
-// `segments` may be a flat array of names (one line) or an array of arrays
-// (each inner array is its own line — e.g. [["caveman"], ["model","context"]]
-// puts the caveman badge on its own row so the stats line gets full width).
-// Lines that render empty are dropped, so an inactive first line never leaves a
-// blank row.
+// `segments` may be a flat array of names (one logical line) or an array of
+// arrays (each inner array is its own logical line). Each logical line is then
+// word-wrapped to the terminal width so nothing is ever clipped — set
+// `wrap.enabled: false` to keep a single line and let the terminal truncate.
 function render(data, configOverride) {
   const cfg = configOverride || loadConfig();
   const c = makeHelpers(cfg);
@@ -54,11 +88,24 @@ function render(data, configOverride) {
   const multiline = segs.some((s) => Array.isArray(s));
   const lineDefs = multiline ? segs.map((s) => (Array.isArray(s) ? s : [s])) : [segs];
 
-  const lines = lineDefs
-    .map((def) => renderLine(def, data, cfg, c))
-    .filter((line) => line && line.length);
+  const div = cfg.divider ? colors.paint('grayDim', cfg.divider, c.enabled) : '';
+  const sep = div ? `${cfg.separator}${div}${cfg.separator}` : cfg.separator;
+  const sepW = fmt.stringWidth(sep);
 
-  return lines.join('\n');
+  const wrap = !(cfg.wrap && cfg.wrap.enabled === false);
+  const maxW = Math.max(8, terminalWidth(cfg) - 1); // -1 safety margin
+
+  const out = [];
+  for (const def of lineDefs) {
+    const pieces = renderPieces(def, data, cfg, c);
+    if (!pieces.length) continue;
+    if (wrap) {
+      for (const line of wrapPieces(pieces, sep, sepW, maxW)) out.push(line);
+    } else {
+      out.push(pieces.join(sep));
+    }
+  }
+  return out.join('\n');
 }
 
-module.exports = { render, renderLine, makeHelpers };
+module.exports = { render, renderPieces, wrapPieces, terminalWidth, makeHelpers };

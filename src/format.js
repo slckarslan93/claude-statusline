@@ -69,4 +69,37 @@ function pct(n) {
   return `${Math.round(Number(n))}%`;
 }
 
-module.exports = { tokens, windowSize, duration, countdown, money, round1, pct };
+// Wide BMP symbols we actually emit that most terminals render 2 cells wide.
+const WIDE_BMP = new Set([0x23f1, 0x267b, 0x26a1, 0x26a0]); // ⏱ ♻ ⚡ ⚠
+
+function isWide(cp) {
+  if (cp > 0xffff) return true; // astral plane: emoji, CJK ext, etc.
+  if (WIDE_BMP.has(cp)) return true;
+  return (
+    (cp >= 0x1100 && cp <= 0x115f) || // Hangul Jamo
+    (cp >= 0x2e80 && cp <= 0xa4cf && cp !== 0x303f) || // CJK radicals … Yi
+    (cp >= 0xac00 && cp <= 0xd7a3) || // Hangul syllables
+    (cp >= 0xf900 && cp <= 0xfaff) || // CJK compatibility ideographs
+    (cp >= 0xfe30 && cp <= 0xfe4f) || // CJK compatibility forms
+    (cp >= 0xff00 && cp <= 0xff60) || // Fullwidth forms
+    (cp >= 0xffe0 && cp <= 0xffe6)
+  );
+}
+
+// Visible width of a string in terminal cells: strips ANSI SGR sequences,
+// ignores zero-width variation selectors, and counts wide glyphs as 2. Good
+// enough to lay out this status line without a wcwidth dependency.
+function stringWidth(str) {
+  if (!str) return 0;
+  const s = String(str).replace(/\x1b\[[0-9;]*m/g, '');
+  let w = 0;
+  for (const ch of s) {
+    const cp = ch.codePointAt(0);
+    if (cp === 0xfe0f || cp === 0x200d) continue; // VS16, ZWJ → width 0
+    if (cp < 0x20) continue; // control chars
+    w += isWide(cp) ? 2 : 1;
+  }
+  return w;
+}
+
+module.exports = { tokens, windowSize, duration, countdown, money, round1, pct, stringWidth };
