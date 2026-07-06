@@ -99,6 +99,31 @@ The `segments` array is the heart of it — it controls **what shows and in what
 | `dir.useProjectDir` | `false` | `false` → current dir; `true` → launch dir |
 | `caveman.enabled` | `false` | Prepend the [caveman](https://github.com/JuliusBrussee/caveman) plugin's mode badge if active |
 
+### Multiple lines
+
+`segments` can also be an **array of arrays** — each inner array becomes its own
+line. This is handy when you want a piece to stand alone with the full terminal
+width to itself:
+
+```json
+{
+  "segments": [
+    ["caveman"],
+    ["dir", "git", "model", "effort", "context", "cache", "cost", "rate5h", "rate7d"]
+  ]
+}
+```
+
+renders as two rows:
+
+```
+[CAVEMAN]
+📁 my-app  ·  ⎇ main  ·  🤖 Opus 4.8  ·  ⚡ max  ·  [▓▓░░░░░░░░] 18% 185k/1M  ·  ♻ cache 100%  ·  💰 $0.42  ·  5h:2% 3h 7m  ·  7d:61% 52h 37m
+```
+
+A line that renders empty (e.g. the caveman badge when caveman isn't active) is
+dropped, so you never get a stray blank row.
+
 ## Segments
 
 | Name | Shows | Source |

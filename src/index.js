@@ -21,13 +21,10 @@ function makeHelpers(cfg) {
   };
 }
 
-// Render the full status line for a parsed Claude Code payload.
-function render(data, configOverride) {
-  const cfg = configOverride || loadConfig();
-  const c = makeHelpers(cfg);
+// Render a single line from a list of segment names.
+function renderLine(names, data, cfg, c) {
   const out = [];
-
-  for (const name of cfg.segments) {
+  for (const name of names) {
     const fn = SEGMENTS[name];
     if (!fn) continue;
     let piece = '';
@@ -38,12 +35,30 @@ function render(data, configOverride) {
     }
     if (piece && String(piece).length) out.push(piece);
   }
-
-  const div = cfg.divider
-    ? colors.paint('grayDim', cfg.divider, c.enabled)
-    : '';
+  const div = cfg.divider ? colors.paint('grayDim', cfg.divider, c.enabled) : '';
   const sep = div ? `${cfg.separator}${div}${cfg.separator}` : cfg.separator;
   return out.join(sep);
 }
 
-module.exports = { render, makeHelpers };
+// Render the full status line for a parsed Claude Code payload.
+//
+// `segments` may be a flat array of names (one line) or an array of arrays
+// (each inner array is its own line — e.g. [["caveman"], ["model","context"]]
+// puts the caveman badge on its own row so the stats line gets full width).
+// Lines that render empty are dropped, so an inactive first line never leaves a
+// blank row.
+function render(data, configOverride) {
+  const cfg = configOverride || loadConfig();
+  const c = makeHelpers(cfg);
+  const segs = cfg.segments || [];
+  const multiline = segs.some((s) => Array.isArray(s));
+  const lineDefs = multiline ? segs.map((s) => (Array.isArray(s) ? s : [s])) : [segs];
+
+  const lines = lineDefs
+    .map((def) => renderLine(def, data, cfg, c))
+    .filter((line) => line && line.length);
+
+  return lines.join('\n');
+}
+
+module.exports = { render, renderLine, makeHelpers };
