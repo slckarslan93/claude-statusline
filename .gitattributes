@@ -1,2 +1,7 @@
 # Normalize line endings: store text as LF in the repo, check out native.
 * text=auto eol=lf
+
+# Binary assets — never apply EOL conversion.
+*.png binary
+*.wav binary
+*.gif binary

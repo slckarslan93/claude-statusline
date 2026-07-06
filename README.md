@@ -4,6 +4,8 @@
 
 One line at the bottom of your terminal, always current: which model and reasoning effort you're on, how full the context window is, what the session has cost, how close you are to your rate limits, git branch, lines changed, and more — all driven by the JSON Claude Code hands its status line on every turn.
 
+![claude-statusline in a terminal](docs/statusline.png)
+
 ```
 my-app │ main │ Opus 4.8 │ max │ ctx 18% 185k/1M │ cache 100% │ $0.42 │ +156/-23 │ 12m │ 5h 2% 3h 7m │ 7d 61% 52h 37m
 ```
@@ -25,7 +27,7 @@ rate limits turning amber or red). No emoji, no rainbow. An optional truecolor
 
 ## Requirements
 
-- Node.js **16+** on your `PATH` (`node --version`)
+- Node.js **18+** on your `PATH` (`node --version`)
 - Claude Code with the status line feature (any recent version)
 
 > **CLI / terminal only.** The status line is a Claude Code **terminal** feature,
@@ -37,19 +39,19 @@ rate limits turning amber or red). No emoji, no rainbow. An optional truecolor
 
 ## Install
 
+**One command** — clone and install:
+
 ```bash
-git clone https://github.com/slckarslan93/claude-statusline.git
-cd claude-statusline
-node install.js
+git clone https://github.com/slckarslan93/claude-statusline.git && cd claude-statusline && node install.js
 ```
 
-The installer:
+Then **restart Claude Code** (or run `/statusline`) and the status line appears at
+the bottom. That's it.
 
-1. seeds a config you can edit at `~/.claude/claude-statusline/config.json`,
-2. backs up `~/.claude/settings.json` (timestamped), and
-3. sets your `statusLine` command to this tool.
+> Already inside Claude Code? Paste the same line with a leading `!` to run it
+> right here: `! git clone …/claude-statusline.git && cd claude-statusline && node install.js`
 
-Then **restart Claude Code** (or run `/statusline`) so it reloads. That's it.
+The installer seeds a config you can edit at `~/.claude/claude-statusline/config.json`, backs up `~/.claude/settings.json` (timestamped), and sets your `statusLine` command to this tool — non-destructively (it aborts rather than touch an unparseable `settings.json`).
 
 > Already have a `statusLine`? The installer prints the old command and keeps it in the backup. To run both, call your previous command from a wrapper, or add its output as a custom segment.
 
